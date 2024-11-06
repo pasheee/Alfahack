@@ -347,7 +347,7 @@ class AdvancedCreditScoringModel_cat(nn.Module):
         
         self.transformer = nn.TransformerEncoderLayer(
             d_model=self.adjusted_input_dim,
-            nhead=2,
+            nhead=1,
             dim_feedforward=256,
             dropout=droprob
         )
@@ -386,6 +386,11 @@ class AdvancedCreditScoringModel_cat(nn.Module):
         
         for feat_idx in sorted(self.cat_dims.keys(), reverse=True):
             cat_feature = x[:, feat_idx].long()
+            print(cat_feature[16])
+            max_cat = self.cat_dims[feat_idx]
+            print(max_cat)
+            if torch.max(cat_feature) >= max_cat:
+                raise ValueError(f"Categorical feature at index {feat_idx} contains values >= {max_cat}")
             embedded = self.embedding_layers[str(feat_idx)](cat_feature)
             embedding_outputs.append(embedded)
             continuous_features = torch.cat(
@@ -393,7 +398,7 @@ class AdvancedCreditScoringModel_cat(nn.Module):
                  continuous_features[:, feat_idx+1:]], 
                 dim=1
             )
-
+    
         if embedding_outputs:
             return torch.cat([continuous_features] + embedding_outputs, dim=1)
         return continuous_features
